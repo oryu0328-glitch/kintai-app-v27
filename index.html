@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>勤怠管理表 v27.0.0</title>
+  <link rel="stylesheet" href="style.v27.css?v=27.0.0">
+  <meta name="theme-color" content="#f45489"><link rel="icon" href="favicon.ico"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">
+</head>
+<body data-theme="pink">
+<nav class="bottom-nav" aria-label="メインメニュー">
+<button type="button" data-tab="home" class="active"><span>⌂</span>ホーム</button>
+<button type="button" data-tab="calendar"><span>▦</span>カレンダー</button>
+<button type="button" data-tab="staff"><span>♙</span>スタッフ</button>
+<button type="button" data-tab="salary"><span>¥</span>給与計算</button>
+<button type="button" data-tab="more"><span>☰</span>その他</button>
+</nav>
+  <header class="app-header">
+    <div>
+      <h1>勤怠管理表 <small class="version-label">v27.0.0</small></h1>
+      <p>スマホ対応・休憩時間対応</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card" data-panel="staff">
+      <div class="section-head">
+        <div>
+          <h2>使用者</h2>
+          <p class="muted">勤怠を記録する人を選択してください。</p>
+        </div>
+        <button id="staffManageBtn" class="small-btn" type="button">使用者管理</button>
+      </div>
+      <select id="staffSelect"></select>
+    </section>
+
+    <section class="card" data-panel="home">
+      <h2>今日の勤怠</h2>
+      <div id="todayDate" class="today-date"></div>
+
+      <div class="live-work">現在の実働 <strong id="liveWorkTime">0:00:00</strong><small id="liveWorkState">未出勤</small></div><div class="status-box">
+        <span>状態</span>
+        <strong id="todayStatus">未出勤</strong>
+      </div>
+
+      <div class="today-grid">
+        <div><span>出勤</span><strong id="todayClockIn">--:--</strong></div>
+        <div><span>休憩</span><strong id="todayBreak">0:00</strong></div>
+        <div><span>退勤</span><strong id="todayClockOut">--:--</strong></div>
+        <div><span>実働</span><strong id="todayWork">0:00</strong></div>
+      </div>
+
+      <div class="action-grid">
+        <button id="clockInBtn" class="primary-btn" type="button">出勤</button>
+        <button id="breakStartBtn" class="break-btn" type="button">休憩開始</button>
+        <button id="breakEndBtn" class="break-btn" type="button">休憩終了</button>
+        <button id="clockOutBtn" class="danger-btn" type="button">退勤</button>
+      </div>
+
+      <div class="sub-actions">
+        <button id="todayEditBtn" class="secondary-btn" type="button">今日の勤怠を編集</button>
+      </div>
+    </section>
+
+    <section class="card" data-panel="home">
+      <h2>今月のダッシュボード</h2>
+      <div class="summary-grid">
+        <div><span>出勤日数</span><strong id="dashDays">0日</strong></div>
+        <div><span>実働合計</span><strong id="dashWork">0:00</strong></div>
+        <div><span>残業目安</span><strong id="dashOvertime">0:00</strong></div>
+        <div><span>打刻確認</span><strong id="dashWarnings">0件</strong></div>
+      </div>
+      <div id="warningList" class="warning-list"></div>
+    </section>
+    <section class="card" data-panel="calendar">
+      <div class="section-head"><h2>月間カレンダー</h2><span class="muted">日付を押すと編集できます</span></div>
+      <div class="calendar-navigation">
+        <button id="calendarPrev" class="secondary-btn" type="button" aria-label="前月">◀ 前月</button>
+        <input id="calendarMonth" type="month" aria-label="カレンダーの表示月">
+        <button id="calendarNext" class="secondary-btn" type="button" aria-label="翌月">翌月 ▶</button>
+      </div>
+      <button id="calendarToday" class="calendar-today secondary-btn" type="button">今月に戻る</button>
+      <div id="calendarGrid" class="calendar-grid"></div><p class="hint"><span class="payday-legend-current">● 当月支払い</span>　<span class="payday-legend-next">● 翌月支払い</span>　青：通常勤務／紫：休日出勤／緑：有給／灰：休日・欠勤・出張／橙：要確認</p>
+      <div class="payday-controls">
+        <h3>個人別・給料日の設定</h3>
+        <p class="hint">画面上部で使用者を選択して設定してください。給料日はカレンダーに色付きで表示されます。土日と日本の祝休日は自動判定します。店舗独自の休業日だけ入力してください。</p>
+        <div class="payday-fields">
+          <label>支払タイミング<select id="paydayOffset"><option value="0">当月支払い（青）</option><option value="1">翌月支払い（紫）</option></select></label>
+          <label>毎月の支払日<select id="paydayDay"><option value="0">月末</option></select></label>
+          <label>休日の支払日調整<select id="paydayAdjustment"><option value="previous">前倒し（直前の営業日）</option><option value="next">後ろ倒し（直後の営業日）</option><option value="fixed">固定（調整しない）</option></select></label>
+          <label>追加の店舗休業日（任意）<textarea id="paydayHolidays" rows="2" placeholder="2026-11-03, 2026-11-23"></textarea></label>
+        </div>
+        <button type="button" id="paydaySaveBtn" class="secondary-btn">この使用者の給料日を保存</button>
+        <p class="hint" id="paydayPreview"></p>
+        <p class="hint" id="paydaySavedMessage" aria-live="polite"></p>
+      </div>
+
+    </section>
+<section class="card" id="salarySection" data-panel="salary">
+  <div class="section-head"><div><h2>給与シミュレーション</h2><p class="muted">使用者ごとに給与形態・金額を保存できます。</p></div><button type="button" id="salaryJumpSettings" class="small-btn">初期設定へ</button></div>
+  <div class="salary-period-control">
+<label>給与締め日<select id="salaryClosingDay"><option value="0">末日締め</option><option value="5">5日締め</option><option value="10">10日締め</option><option value="15">15日締め</option><option value="20">20日締め</option><option value="25">25日締め</option></select></label>
+<label>給与計算の対象月<input id="salaryTargetMonth" type="month"></label>
+<p id="salaryPeriodRange" class="hint"></p></div><div class="salary-results">
+    <div><span>対象者</span><strong id="salaryStaffName">—</strong></div>
+    <div><span>対象月</span><strong id="salaryPeriod">—</strong></div>
+    <div><span>実働時間</span><strong id="salaryHours">0:00</strong></div>
+    <div><span>給与概算（額面）</span><strong id="salaryTotal">¥0</strong></div>
+    <div id="salaryNetCard" class="hidden"><span>差引支給額（概算）</span><strong id="salaryNet">¥0</strong></div>
+  </div>
+  <p id="salaryDetails" class="hint"></p>
+  <div class="salary-settings" id="salarySettings">
+    <h3>個人別の給与初期設定</h3>
+    <label>給与形態<select id="salaryMode"><option value="hourly">時給制</option><option value="monthly">月給制</option></select></label>
+    <div id="hourlySalarySettings">
+      <div class="salary-fields">
+        <label>基本時給（円・共通の初期値）<input id="baseHourly" type="number" min="0" step="1"></label>
+        <label>金曜日の倍率<input id="friRate" type="number" min="0" step="0.05"></label>
+        <label>土曜日の倍率<input id="satRate" type="number" min="0" step="0.05"></label>
+        <label>日曜日の倍率<input id="sunRate" type="number" min="0" step="0.05"></label>
+        <label>祝日の倍率<input id="holidayRate" type="number" min="0" step="0.05"></label>
+        <label>祝日前日の倍率<input id="preHolidayRate" type="number" min="0" step="0.05"></label>
+        <label class="holiday-dates-field">追加の特別休日（任意・YYYY-MM-DD）
+          <textarea id="salaryHolidayDates" rows="3" placeholder="2026-11-03, 2026-11-23"></textarea>
+        </label>
+        <label>夜間開始<input id="nightStart" type="time"></label>
+        <label>夜間終了<input id="nightEnd" type="time"></label>
+        <label>夜間の追加倍率<input id="nightExtra" type="number" min="0" step="0.05"></label>
+      </div>
+      <div class="payroll-panel">
+        <h3>対象月の基本時給</h3>
+        <p class="hint">上の「給与計算の対象月」に対して時給を保存します。月別設定がない月は共通の基本時給を使います。過去月の金額は変わりません。</p>
+        <label>この月の時給（円）<input id="monthlyHourlyOverride" type="number" min="0" step="1" inputmode="numeric"></label>
+        <div class="payroll-buttons"><button id="saveMonthlyHourlyBtn" type="button" class="primary-btn">この月の時給を保存</button><button id="removeMonthlyHourlyBtn" type="button" class="secondary-btn">この月の設定を解除</button></div>
+        <p id="monthlyHourlyMessage" class="hint" aria-live="polite"></p>
+      </div>
+      <div class="special-period-panel">
+        <h3>年末年始・お盆などの特別時給</h3>
+        <p class="hint">開始日〜終了日を指定して固定時給を設定します。曜日・祝日・祝日前日の倍率より優先します。夜間追加倍率は特別時給に対して別途加算します。</p>
+        <div id="specialPeriodRows"></div>
+        <button type="button" id="specialPeriodAddBtn" class="secondary-btn">＋ 特別期間を追加</button>
+        <p class="hint">期間は両端の日付を含みます。重複期間は登録できません。毎年自動で繰り返す設定ではありません。</p>
+      </div>
+      <p class="hint">祝日・祝日前日の倍率は曜日倍率より優先します（祝日 ＞ 祝日前日 ＞ 金土日）。祝日前日は翌日が登録された祝日の場合です。夜間加算は別途上乗せします。日本の祝日・振替休日・国民の休日は自動判定します。店舗独自の休日だけ追加登録してください。</p>
+    </div>
+    <div id="monthlySalarySettings" class="hidden">
+      <div class="salary-fields">
+        <label>基本月給（円）<input id="monthlyBase" type="number" min="0" step="1"></label>
+        <label>月額固定手当（円）<input id="monthlyAllowance" type="number" min="0" step="1"></label>
+        <label>時間外の基準単価（円/時）<input id="overtimeHourly" type="number" min="0" step="1"></label>
+        <label>時間外の倍率<input id="overtimeRate" type="number" min="0" step="0.05"></label>
+      </div>
+      <p class="hint">月給と固定手当は、記録がない月にも含まれます。時間外手当は1日の所定時間超過分を使った簡易計算です。</p>
+      <div class="payroll-panel">
+        <h3>対象月の給与明細（支給・控除）</h3>
+        <p class="hint">教員の給与明細を参考にした自由入力式です。対象月ごとに保存され、他の月には影響しません。基本月給・固定手当・時間外手当は上の設定から計算します。</p>
+        <label>この月の基本月給（円）<input id="monthlyBaseOverride" type="number" min="0" step="1" inputmode="numeric"></label>
+        <h4>追加の支給項目</h4><div id="allowanceRows"></div>
+        <button id="addAllowanceBtn" type="button" class="secondary-btn">＋ 支給項目を追加</button>
+        <h4>控除項目</h4><div id="deductionRows"></div>
+        <button id="addDeductionBtn" type="button" class="secondary-btn">＋ 控除項目を追加</button>
+        <div class="payroll-buttons"><button id="saveMonthlyPayslipBtn" type="button" class="primary-btn">この月の給与明細を保存</button><button id="removeMonthlyPayslipBtn" type="button" class="secondary-btn">この月の明細を解除</button></div>
+        <p id="monthlyPayslipMessage" class="hint" aria-live="polite"></p>
+      </div>
+    </div>
+    <button type="button" id="salarySaveBtn" class="primary-btn full-btn">この使用者の給与設定を保存</button>
+    <p class="hint" id="salarySavedMessage" aria-live="polite"></p>
+  </div>
+  <p class="hint">税金・社会保険料控除前の概算です。法定割増、休日区分、固定残業代、締め日などは会社の規定に従って確認してください。</p>
+</section>
+<section class="card history-card" data-panel="more">
+      <div class="history-header">
+        <div>
+          <h2>勤怠履歴</h2>
+          <p class="muted">勤怠を追加・編集・削除できます。</p>
+        </div>
+        <button id="newRecordBtn" class="primary-btn new-record-btn" type="button">＋ 新規追加</button>
+      </div>
+
+      <div class="history-filter">
+        <label>
+          表示する月
+          <input id="historyMonth" type="month">
+        </label>
+      </div>
+
+      <div id="historyList" class="history-list"></div>
+    </section>
+
+    <section class="card monthly-summary-card" data-panel="salary">
+      <h2>月間集計</h2>
+      <label>
+        集計月
+        <input id="summaryMonth" type="month">
+      </label>
+      <div class="summary-grid">
+        <div><span>出勤日数</span><strong id="summaryDays">0日</strong></div>
+        <div><span>総休憩</span><strong id="summaryBreak">0:00</strong></div>
+        <div><span>総実働</span><strong id="summaryWork">0:00</strong></div>
+      </div>
+      <div class="settings-panel">
+        <label>1日の所定労働時間（残業計算の目安）
+          <input id="regularMinutes" type="time" value="07:45">
+        </label>
+        <p class="hint">所定時間を超えた実働を「残業目安」として集計します。法定の時間外労働とは異なる場合があります。</p>
+      </div>
+      <div class="backup-settings"><h3>自動バックアップ（端末内）</h3><p class="hint">変更時にブラウザ内へ最大7世代保存します。端末故障やブラウザデータ削除に備え、JSONファイルも保存してください。</p><div class="backup-actions"><button type="button" id="restoreAutoBtn" class="secondary-btn">自動保存から復元</button><button type="button" id="downloadAutoBtn" class="secondary-btn">最新の自動保存をダウンロード</button></div><p id="autoBackupStatus" class="hint"></p></div><div class="backup-actions">
+        <button id="backupBtn" class="secondary-btn" type="button">バックアップ保存</button>
+        <button id="restoreBtn" class="secondary-btn" type="button">バックアップ復元</button>
+        <input id="restoreFile" type="file" accept=".json,application/json" hidden>
+      </div>
+      <button id="csvBtn" class="secondary-btn full-btn" type="button">CSV出力</button>
+    </section>
+  </main>
+
+
+<section class="card" data-panel="more" id="moreMenu">
+<h2>その他</h2><div class="menu-list">
+<button type="button" data-jump="tasks">☑ タスク管理 <span>›</span></button>
+<button type="button" data-jump="history">▤ 勤務履歴 <span>›</span></button>
+<button type="button" data-jump="backup">▣ データ管理・バックアップ <span>›</span></button>
+</div><h3 class="menu-title">デザイン設定</h3>
+<p class="hint">背景色はいつでも変更できます。設定はこの端末に保存されます。</p>
+<div class="theme-choices" role="group" aria-label="テーマカラー">
+<button type="button" data-theme-choice="pink" aria-label="ピンク"><i></i><small>ピンク</small></button>
+<button type="button" data-theme-choice="blue" aria-label="ブルー"><i></i><small>ブルー</small></button>
+<button type="button" data-theme-choice="green" aria-label="グリーン"><i></i><small>グリーン</small></button>
+<button type="button" data-theme-choice="beige" aria-label="ベージュ"><i></i><small>ベージュ</small></button>
+<button type="button" data-theme-choice="dark" aria-label="ダーク"><i></i><small>ダーク</small></button>
+</div>
+</section>
+<section class="card" data-panel="tasks" id="taskCard"><div class="section-head"><h2>タスク管理</h2><button type="button" class="small-btn" id="tasksBack">戻る</button></div>
+<p class="hint">個人用ToDo。追加・完了・削除ができます。</p>
+<form id="taskForm" class="task-form"><input id="taskInput" maxlength="120" placeholder="タスクを入力" required><button class="primary-btn" type="submit">追加</button></form>
+<div id="taskList" class="task-list"></div></section>
+  <div id="recordModal" class="modal hidden">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <div>
+          <h2 id="recordModalTitle">勤怠を新規作成</h2>
+          <p class="muted">日付・出退勤・休憩を自由に入力できます。</p>
+        </div>
+        <button class="close-btn" data-close="recordModal" type="button">×</button>
+      </div>
+
+      <div class="form-grid">
+        <label>日付<input id="recordDate" type="date"></label>
+        <label>出勤<input id="recordClockIn" type="time"></label>
+        <label>退勤<input id="recordClockOut" type="time"></label><label class="inline-check"><input id="recordOutNextDay" type="checkbox"> 翌日に退勤</label>
+      </div>
+
+      <div class="break-editor">
+        <div class="section-head">
+          <h3>休憩時間</h3>
+          <button id="recordAddBreakBtn" class="small-btn" type="button">＋休憩追加</button>
+        </div>
+        <div id="recordBreakRows"></div>
+        <p class="hint">休憩は何回でも登録できます。休憩なしでも保存できます。</p>
+      </div>
+
+      <label>勤務区分<select id="recordType"><option value="normal">通常勤務</option><option value="holidayWork">休日出勤</option><option value="paid">有給</option><option value="holiday">休日</option><option value="absence">欠勤</option><option value="trip">出張</option></select></label><label>備考<textarea id="recordNote" rows="3" placeholder="任意"></textarea></label>
+
+      <div class="record-preview">
+        <div><span>休憩合計</span><strong id="recordBreakPreview">0:00</strong></div>
+        <div><span>実働</span><strong id="recordWorkPreview">0:00</strong></div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="recordDeleteBtn" class="danger-outline" type="button">削除</button>
+        <button id="recordSaveBtn" class="primary-btn" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="staffModal" class="modal hidden">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h2>使用者管理</h2>
+        <button class="close-btn" data-close="staffModal" type="button">×</button>
+      </div>
+      <div class="add-staff-row">
+        <input id="newStaffName" type="text" placeholder="新しい使用者名">
+        <button id="addStaffBtn" class="primary-btn" type="button">追加</button>
+      </div>
+      <div id="staffList"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.v27.js?v=27.0.0"></script>
+  <script src="ui.v27.js?v=27.0.0"></script>
+</body>
+</html>
